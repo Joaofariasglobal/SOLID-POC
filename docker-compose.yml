@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: solid-poc-finance:latest
+    container_name: solid-poc-finance
+    ports:
+      - "8080:8000"
+    volumes:
+      - sqlite-data:/app/database
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: sqlite
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:
