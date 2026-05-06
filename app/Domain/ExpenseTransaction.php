@@ -2,8 +2,6 @@
 
 namespace App\Domain;
 
-use LogicException;
-
 class ExpenseTransaction extends BaseTransaction
 {
     public function getSignedAmount(): float
@@ -11,8 +9,7 @@ class ExpenseTransaction extends BaseTransaction
         return -$this->amount;
     }
 
-    public function applyDiscount(float $percent): float
-    {
-        throw new LogicException('Não é possível aplicar desconto em uma despesa.');
-    }
+    public function getIcon(): string { return '-'; }
+
+    public function getColor(): string { return 'red'; }
 }

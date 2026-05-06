@@ -11,13 +11,18 @@ abstract class BaseTransaction
     ) {
     }
 
-    public function getSignedAmount(): float
-    {
-        return $this->amount;
-    }
+    public abstract function getSignedAmount(): float;
 
-    public function applyDiscount(float $percent): float
+    public abstract function getIcon(): string;
+    public abstract function getColor(): string;
+
+    public static function fromArray(array $row): self
     {
-        return $this->amount * (1 - $percent / 100);
+        if ($row['type'] === 'income') {
+            return new IncomeTransaction((float) $row['amount'], $row['description'] ?? '', $row['category'] ?? 'outros');
+        } elseif ($row['type'] === 'expense') {
+            return new ExpenseTransaction((float) $row['amount'], $row['description'] ?? '', $row['category'] ?? 'outros');
+        }
+        throw new \RuntimeException("Tipo desconhecido: {$row['type']}");
     }
 }
