@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FinanceService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Contracts\UserServiceInterface;
+use Illuminate\Http\JsonResponse;
 use InvalidArgumentException;
 
 class UserController extends Controller
 {
+    private UserServiceInterface $userService;
+    public function __construct(UserServiceInterface $userService)
+    {
+        $this->userService = $userService;
+    }
+
     public function store(Request $request): JsonResponse
     {
-        $service = new FinanceService();
-
         try {
-            $user = $service->createUser($request->all());
+            $user = $this->userService->createUser($request->all());
             return response()->json($user, 201);
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -23,8 +27,7 @@ class UserController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $service = new FinanceService();
-        $user = $service->findUser($id);
+        $user = $this->userService->findUser($id);
 
         if (! $user) {
             return response()->json(['error' => 'Usuário não encontrado.'], 404);

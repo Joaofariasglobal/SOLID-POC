@@ -2,8 +2,6 @@
 
 namespace App\Domain;
 
-use LogicException;
-
 class ExpenseTransaction extends BaseTransaction
 {
     public function getSignedAmount(): float
@@ -13,6 +11,10 @@ class ExpenseTransaction extends BaseTransaction
 
     public function applyDiscount(float $percent): float
     {
-        throw new LogicException('Não é possível aplicar desconto em uma despesa.');
+        if ($percent < 0 || $percent > 100) {
+            throw new \InvalidArgumentException('Percentual de desconto deve estar entre 0 e 100.');
+        }
+
+        return $this->amount * (1 - $percent / 100);
     }
 }
