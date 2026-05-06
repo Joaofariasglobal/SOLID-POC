@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\FinanceService;
+use App\Services\CreateTransactionService;
+use App\Contracts\TransactionRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class TransactionController extends Controller
 {
-    public function store(Request $request, int $id): JsonResponse
+    public function store(Request $request, int $id, CreateTransactionService $service): JsonResponse
     {
-        $service = new FinanceService();
-
         $payload = $request->all();
         $payload['user_id'] = $id;
 
@@ -24,11 +23,8 @@ class TransactionController extends Controller
         }
     }
 
-    public function index(int $id): JsonResponse
+    public function index(int $id, TransactionRepositoryInterface $transactions): JsonResponse
     {
-        $service = new FinanceService();
-        $transactions = $service->listTransactions($id);
-
-        return response()->json($transactions);
+        return response()->json($transactions->listTransactions($id));
     }
 }
