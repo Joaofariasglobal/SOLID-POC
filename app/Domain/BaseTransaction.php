@@ -8,16 +8,16 @@ abstract class BaseTransaction
         public readonly float $amount,
         public readonly string $description,
         public readonly string $category,
-    ) {
+    )
+    {
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Saldo deve ser maior que 0.');
+        }
+
+        if (trim($category) === '') {
+            throw new \InvalidArgumentException('Categoria é obrigatória.');
+        }
     }
 
-    public function getSignedAmount(): float
-    {
-        return $this->amount;
-    }
-
-    public function applyDiscount(float $percent): float
-    {
-        return $this->amount * (1 - $percent / 100);
-    }
+    abstract public function getSignedAmount(): float;
 }
