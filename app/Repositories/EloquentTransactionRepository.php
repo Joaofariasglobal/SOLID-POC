@@ -17,14 +17,13 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
     public function saveTransaction(array $data) : array
     {
         $amount = (float) $data['amount'];
-        $currency = $data['currency'] ?? 'BRL';
-        if ($currency === 'USD') {
-            $amount = $amount * self::COTACAO_USD;
-        } elseif ($currency === 'EUR') {
-            $amount = $amount * self::COTACAO_EUR;
-        } elseif ($currency !== 'BRL') {
-            throw new InvalidArgumentException('Moeda não suportada.');
-        }
+        $currency = $data['currency'] ?? 'BRL'; 
+    
+        $amount = match($currency) {
+            'USD' => $amount * self::COTACAO_USD,
+            'EUR' => $amount * self::COTACAO_EUR,
+            'BRL' => $amount,
+    };
 
         $occurredAt = isset($data['occurred_at'])
             ? Carbon::parse($data['occurred_at'])

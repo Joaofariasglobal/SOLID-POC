@@ -19,7 +19,7 @@ class TransactionController extends Controller
     {
         $service = $this->transaction;
 
-        $payload = $request->all();
+        $payload = $request->validated();
         $payload['user_id'] = $id;
 
         try {

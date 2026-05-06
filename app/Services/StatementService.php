@@ -1,17 +1,12 @@
 <?php
 
 namespace App\Services;
-use App\Contracts\StatementServiceInterface;
+use App\Contracts\StatementRepositoryInterface;
 
-class StatementService implements StatementServiceInterface
+class StatementService implements StatementRepositoryInterface
 {
-    public function __construct(private StatementServiceInterface $statementService)
-    {
-           // The line below is not needed as the property is already initialized via constructor property promotion
-    }
-
-    public function getStatement(int $userId): array
-    {
-        return $this->statementService->getStatement($userId);
-    }
+    public function __construct(private StatementRepositoryInterface $repository) {}
+    public function getStatement(int $userId): array {
+        return $this->repository->getStatement($userId);
+    }   
 }

@@ -20,25 +20,12 @@ class TransactionService implements TransactionServiceInterface
         $this->transactionRepository = $transactionRepository;
         $this->userRepository = $userRepository;
     }
-
     public function saveTransaction(array $data): array
     {
-        if (! isset($data['user_id'])) {
-            throw new InvalidArgumentException('user_id é obrigatório.');
-        }
         if (! $this->userRepository->findUser((int) $data['user_id'])) {
-            throw new InvalidArgumentException('Usuário não encontrado.');
-        }
-        if (! isset($data['type']) || ! in_array($data['type'], ['income', 'expense'], true)) {
-            throw new InvalidArgumentException('type deve ser income ou expense.');
-        }
-        if (! isset($data['amount']) || ! is_numeric($data['amount']) || $data['amount'] <= 0) {
-            throw new InvalidArgumentException('amount deve ser numérico e maior que zero.');
-        }
-        if (! isset($data['category'])) {
-            throw new InvalidArgumentException('category é obrigatório.');
-        }
-
+        throw new InvalidArgumentException('Usuário não encontrado.');
+    }
+        
         return $this->transactionRepository->saveTransaction($data);
     }
 

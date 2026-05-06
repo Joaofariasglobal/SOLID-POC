@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      * Register any application services.
      */
     public function register(): void
-    {
+    {    
         $this->app->bind(StatementRepositoryInterface::class, EloquentStatementRepository::class);
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
         $this->app->bind(TransactionRepositoryInterface::class, EloquentTransactionRepository::class);
