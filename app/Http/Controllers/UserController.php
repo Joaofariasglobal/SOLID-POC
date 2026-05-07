@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreUserRequest;
 use App\Contracts\UserServiceInterface;
 use Illuminate\Http\JsonResponse;
 use InvalidArgumentException;
@@ -15,10 +15,10 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
         try {
-            $user = $this->userService->createUser($request->all());
+            $user = $this->userService->createUser($request->validated());
             return response()->json($user, 201);
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

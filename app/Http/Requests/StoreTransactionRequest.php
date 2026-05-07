@@ -5,8 +5,14 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Http\Rules\ValidCategoryForTypeRule;
 
-class StoreTransaction extends FormRequest
+class StoreTransactionRequest extends FormRequest
 {
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'user_id' => (int) $this->route('id'),
+        ]);
+    }
     public function authorize(): bool
     {
         return true;
@@ -14,6 +20,7 @@ class StoreTransaction extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => 'required|integer|exists:users,id',
             'type' => 'required|string|in:income,expense',
             'amount' => 'required|numeric|min:0.01',
             'category' => ['required', 'string', new ValidCategoryForTypeRule($this->input('type'))
@@ -21,7 +28,7 @@ class StoreTransaction extends FormRequest
             'description' => 'nullable|string|max:255',
             'currency' => 'nullable|string|in:BRL,USD,EUR',
             'discount' => 'nullable|numeric|between:0,100',
-            'occured_at' => 'nullable|date',
+            'occurred_at' => 'nullable|date',
         ];
     }
     public function messages(): array

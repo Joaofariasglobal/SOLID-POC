@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Contracts\UserRepositoryInterface;
 use App\Contracts\UserServiceInterface;
+use Illuminate\Support\Facades\Event;
+use App\Events\UserRegistered;
 use InvalidArgumentException;
 
 class UserService implements UserServiceInterface
@@ -16,19 +18,15 @@ class UserService implements UserServiceInterface
     }
     public function createUser(array $data): array
     {
-        if (! isset($data['name']) || trim($data['name']) === '') {
-            throw new InvalidArgumentException('Nome é obrigatório.');
-        }
-
-        if (! isset($data['email']) || ! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('E-mail inválido.');
-        }
-
-        if (strlen($data['name']) < 3) {
-            throw new InvalidArgumentException('Nome deve ter ao menos 3 caracteres.');
-        }
-
-        return $this->userRepository->createUser($data);
+        $user = $this->userRepository->createUser($data);
+    
+        Event::dispatch(new UserRegistered(
+            userId: $user['id'],
+            name: $user['name'],
+            email: $user['email'],
+        ));
+    
+        return $user;
     }
 
     public function findUser(int $userId): ?array

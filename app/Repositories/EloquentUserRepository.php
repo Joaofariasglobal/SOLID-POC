@@ -25,16 +25,6 @@ class EloquentUserRepository implements UserRepositoryInterface
             'updated_at' => now(),
         ]);
 
-        Log::info("[FinanceService] Usuário criado: id={$id} email={$data['email']}");
-
-        try {
-            Mail::raw("Bem-vindo(a), {$data['name']}!", function ($m) use ($data) {
-                $m->to($data['email'])->subject('Cadastro realizado');
-            });
-        } catch (\Throwable $e) {
-            Log::warning("[FinanceService] Falha ao enviar e-mail: {$e->getMessage()}");
-        }
-
         return [
             'id' => $id,
             'name' => $data['name'],
@@ -44,7 +34,7 @@ class EloquentUserRepository implements UserRepositoryInterface
 
     public function findUser(int $userId): ?array
     {
-        $user = User::findUser($userId);
+        $user = User::find($userId);
         if (! $user) {
             return null;
         }
