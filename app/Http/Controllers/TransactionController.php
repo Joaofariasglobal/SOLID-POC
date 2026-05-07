@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTransactionRequest;
 use App\Contracts\TransactionServiceInterface;
 use Illuminate\Http\JsonResponse;
 use InvalidArgumentException;
@@ -15,25 +15,21 @@ class TransactionController extends Controller
     {
         $this->transaction = $transaction;
     }
-    public function store(Request $request, int $id): JsonResponse
+    public function store(StoreTransactionRequest $request, int $id): JsonResponse
     {
-        $service = $this->transaction;
-
-        $payload = $request->all();
-        $payload['user_id'] = $id;
-
-        try {
-            $transaction = $service->saveTransaction($payload);
-            return response()->json($transaction, 201);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
+        try 
+        {
+            $transaction = $this->transaction->saveTransaction($request->validated());
+                return response()->json($transaction, 201);
+            } 
+            catch (InvalidArgumentException $e) {
+                return response()->json(['error' => $e->getMessage()], 422);
         }
     }
 
     public function index(int $id): JsonResponse
     {
-        $service = $this->transaction;
-        $transactions = $service->listTransactions($id);
+        $transactions = $this->transaction->listTransactions($id);
 
         return response()->json($transactions);
     }
