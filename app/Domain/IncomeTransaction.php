@@ -8,6 +8,7 @@ class IncomeTransaction extends BaseTransaction
     {
         return $this->amount;
     }
+    public function getType (): string { return 'income'; }
     public function getIcon(): string { return '+'; }
     public function getColor(): string { return 'green'; }
 }

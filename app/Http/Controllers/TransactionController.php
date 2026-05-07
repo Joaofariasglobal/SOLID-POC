@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CreateTransactionService;
 use App\Contracts\TransactionRepositoryInterface;
+use App\Services\ListTransactionsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -23,8 +24,8 @@ class TransactionController extends Controller
         }
     }
 
-    public function index(int $id, TransactionRepositoryInterface $transactions): JsonResponse
+    public function index(int $id, ListTransactionsService $service): JsonResponse
     {
-        return response()->json($transactions->listTransactions($id));
+        return response()->json($service->execute($id));
     }
 }

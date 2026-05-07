@@ -4,16 +4,14 @@ namespace App\Services;
 
 use App\Contracts\TransactionRepositoryInterface;
 use App\Contracts\UserRepositoryInterface;
-use App\Domain\BaseTransaction;
-use Illuminate\Support\Facades\Log;
+use App\Presenters\TransactionPresenter;
+use Psr\Log\LoggerInterface;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
 class StatementService
 {
-    public function __construct(private UserRepositoryInterface $userRepository, private TransactionRepositoryInterface $transactionRepository) 
-    {
-    }
+    public function __construct(private UserRepositoryInterface $userRepository, private TransactionRepositoryInterface $transactionRepository, private TransactionPresenter $presenter, private LoggerInterface $logger) {}
 
     public function getStatement(int $userId): array
     {
@@ -22,47 +20,33 @@ class StatementService
             throw new InvalidArgumentException('Usuário não encontrado.');
         }
 
-        $rows = $this->transactionRepository->findByUser($userId);
+        $transactions = $this->transactionRepository->findByUser($userId);
 
         $totalReceitas = 0.0;
         $totalDespesas = 0.0;
         $porCategoria = [];
         $items = [];
 
-        foreach ($rows as $row) {
-            $tx = BaseTransaction::fromArray(((array) $row));
-            $amount = (float) $row->amount;
+        foreach ($transactions as $tx) {
+            $signed = $tx->getSignedAmount();
 
-            if ($tx->getSignedAmount() >= 0) {
-                $totalReceitas += $amount;
+            if ($signed >= 0) {
+                $totalReceitas += $tx->amount;
             } else{
-                $totalDespesas += $amount;
+                $totalDespesas += $tx->amount;
             }
 
-            $key = $row->type . ':' . ($row->category ?? 'outros');
-            if (! isset($porCategoria[$key])) {
-                $porCategoria[$key] = 0.0;
-            }
-            $porCategoria[$key] += $amount;
+            $key = $tx->getType() . ':' . ($tx->category ?: 'outros');
+            $porCategoria[$key] = ($porCategoria[$key] ?? 0.0) + $tx->amount;
 
-            $items[] = [
-                'id' => $row->id,
-                'type' => $row->type,
-                'category' => $row->category,
-                'description' => $row->description,
-                'amount' => number_format($amount, 2, '.', ''),
-                'signed_amount' => number_format($tx->getSignedAmount(), 2, '.', ''),
-                'occurred_at' => $row->occurred_at,
-                'icon' => $tx->getIcon(),
-                'color' => $tx->getColor(),
-            ];
+            $items[] = $this->presenter->toArray($tx);
         }
-
+        
         $saldo = $totalReceitas - $totalDespesas;
         $status = $saldo >= 0 ? 'positivo' : 'negativo';
 
         if ($saldo < 0) {
-            Log::warning("[FinanceService] Usuário {$userId} está com saldo negativo: R$ {$saldo}");
+            $this->logger->warning("[Statement] Usuário {$userId} está com saldo negativo: R$ {$saldo}");
         }
 
         return [

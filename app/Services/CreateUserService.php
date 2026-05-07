@@ -3,14 +3,18 @@
 namespace App\Services;
 
 use App\Contracts\UserRepositoryInterface;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use App\Events\UserRegistered;
+use Illuminate\Contracts\Events\Dispatcher;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 
 class CreateUserService
 {            
-    public function __construct(private UserRepositoryInterface $userRepository)
-    {
+    public function __construct(
+        private UserRepositoryInterface $userRepository,
+        private Dispatcher $eventDispatcher,
+        private LoggerInterface $logger
+    ) {
     }
 
     public function createUser(array $data): array
@@ -19,26 +23,24 @@ class CreateUserService
             throw new InvalidArgumentException('Nome é obrigatório.');
         }
 
-        if (! isset($data['email']) || ! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('E-mail inválido.');
-        }
-
         if (strlen($data['name']) < 3) {
             throw new InvalidArgumentException('Nome deve ter ao menos 3 caracteres.');
         }
 
-        $userRepository = $this->userRepository->createUser($data);
+        if (! isset($data['email']) || ! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('E-mail inválido.');
+        }      
 
-        Log::info("[FinanceService] Usuário criado: id={$userRepository['id']} email={$data['email']}");
+        $user = $this->userRepository->createUser($data);
 
-        try {
-            Mail::raw("Bem-vindo(a), {$data['name']}!", function ($m) use ($data) {
-                $m->to($data['email'])->subject('Cadastro realizado');
-            });
-        } catch (\Throwable $e) {
-            Log::warning("[FinanceService] Falha ao enviar e-mail: {$e->getMessage()}");
-        }
+        $this->logger->info("[Users] Usuário criado: id={$user['id']} email={$user['email']}");
 
-        return $userRepository;
+        $this->eventDispatcher->dispatch(new UserRegistered(
+            (int) $user['id'],
+            $data['name'],
+            $data['email']
+        ));
+
+        return $user;
     }
 }
