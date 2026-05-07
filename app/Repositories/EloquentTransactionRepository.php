@@ -3,20 +3,18 @@
 namespace App\Repositories;
 
 use App\Contracts\TransactionRepositoryInterface;
-use App\Domain\BaseTransaction;
+use App\Contracts\TransactionFactoryInterface;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class EloquentTransactionRepository implements TransactionRepositoryInterface
 {
+    public function __construct(private TransactionFactoryInterface $factory) {}
+
     public function saveTransaction(array $data): array
     {
-        if (isset($data['occurred_at'])) {
-            $occurredAt = Carbon::parse($data['occurred_at']);
-        } else {
-            $occurredAt = Carbon::now();
-        }
+        $occurredAt = isset($data['occurred_at']) ? Carbon::parse($data['occurred_at']) : Carbon::now();
 
         $transaction = Transaction::create([
             'user_id' => $data['user_id'],
@@ -40,27 +38,12 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
 
     public function listTransactions(int $userId): array
     {
-            $rows = Transaction::where('user_id', $userId)
-                ->orderBy('occurred_at', 'desc')
-                ->get();
+        return $this->fetchDomain($userId);
+    }
 
-            $result = [];
-            foreach ($rows as $row) {
-                $tx = BaseTransaction::fromArray((array) $row);
-                $result[] = [
-                    'id' => $row->id,
-                    'type' => $row->type,
-                    'category' => $row->category,
-                    'description' => $row->description,
-                    'amount' => number_format((float) $row->amount, 2, '.', ''),
-                    'signed_amount' => number_format($tx->getSignedAmount(), 2, '.', ''),
-                    'occurred_at' => $row->occurred_at,
-                    'icon' => $tx->getIcon(),
-                    'color' => $tx->getColor(),
-                ];
-            }
-
-        return $result;
+    public function findByUser(int $userId): Collection
+    {
+        return $this->fetchDomain($userId);
     }
 
     public function deleteTransaction(int $id): void
@@ -68,8 +51,20 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
         Transaction::where('id', $id)->delete();
     }
 
-    public function findByUser(int $userId): Collection
+    /** @return array<\App\Domain\BaseTransaction> */
+    private function fetchDomain(int $userId): array
     {
-        return Transaction::where('user_id', $userId)->get();
+        return Transaction::where('user_id', $userId)
+            ->orderBy('occurred_at', 'desc')
+            ->get()
+            ->map(fn ($row) => $this->factory->fromArray([
+                'id' => $row->id,
+                'type' => $row->type,
+                'category' => $row->category,
+                'description' => $row->description,
+                'amount' => $row->amount,
+                'occurred_at' => $row->occurred_at,
+            ]))
+            ->all();
     }
 }

@@ -2,27 +2,50 @@
 
 namespace App\Services;
 
+use App\Contracts\ExchangeRateProviderInterface;
 use App\Contracts\TransactionRepositoryInterface;
 use App\Contracts\UserRepositoryInterface;
-use App\Domain\BaseTransaction;
-use Illuminate\Support\Facades\Log;
+use App\Domain\CategoryPolicy;
+use App\Events\HighExpenseDetected;
+use Illuminate\Contracts\Events\Dispatcher;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 
 class CreateTransactionService
 {
-    const CATEGORIAS_RECEITA = ['salario', 'freelance', 'investimento', 'outros'];
-    const CATEGORIAS_DESPESA = ['alimentacao', 'transporte', 'moradia', 'lazer', 'saude', 'educacao', 'outros'];
-    const COTACAO_USD = 5.20;
-    const COTACAO_EUR = 5.65;
+    private const HIGH_EXPENSE_THRESHOLD = 5000.0;
 
     public function __construct(
         private UserRepositoryInterface $userRepository,
-        private TransactionRepositoryInterface $transactionRepository
+        private TransactionRepositoryInterface $transactionRepository,
+        private ExchangeRateProviderInterface $exchangeRate,
+        private CategoryPolicy $categoryPolicy,
+        private Dispatcher $events,
+        private LoggerInterface $logger,
     ) 
     {
     }
 
     public function saveTransaction(array $data): array
+    {
+        $this->validate($data);
+
+        $currency = $data['currency'] ?? 'BRL';
+        $data['amount'] = $this->exchangeRate->convertToBRL((float) $data['amount'], $currency);
+
+        $result = $this->transactionRepository->saveTransaction($data);
+
+        $this->logger->info("[Transactions] Transação salva: id={$result['id']} user={$data['user_id']} type={$data['type']} amount={$data['amount']}");
+
+        if ($data['type'] === 'expense' && $data['amount'] > self::HIGH_EXPENSE_THRESHOLD)
+        {
+            $this->events->dispatch(new HighExpenseDetected((int)$data['user_id'], (float)$data['amount']));
+        }
+
+        return $result;
+    }
+
+    private function validate(array $data): void
     {
         if (! isset($data['user_id'])) {
             throw new InvalidArgumentException('user_id é obrigatório.');
@@ -39,37 +62,9 @@ class CreateTransactionService
         if (! isset($data['category'])) {
             throw new InvalidArgumentException('category é obrigatório.');
         }
-        if ($data['type'] === 'income') {
-            if (! in_array($data['category'], self::CATEGORIAS_RECEITA, true)) {
-                throw new InvalidArgumentException('Categoria inválida para receita.');
-            }
-        } elseif ($data['type'] === 'expense') {
-            if (! in_array($data['category'], self::CATEGORIAS_DESPESA, true)) {
-                throw new InvalidArgumentException('Categoria inválida para despesa.');
-            }
-        }
-        $amount = (float) $data['amount'];
-        $currency = $data['currency'] ?? 'BRL';
-        if ($currency === 'USD') {
-            $amount = $amount * self::COTACAO_USD;
-            $data['amount'] = $amount;  
-        } elseif ($currency === 'EUR') {
-            $amount = $amount * self::COTACAO_EUR;
-            $data['amount'] = $amount;  
-        } elseif ($currency !== 'BRL') {
-            throw new InvalidArgumentException('Moeda não suportada.');
-        }
-
-        $result = $this->transactionRepository->saveTransaction($data);
-
-        Log::info("[FinanceService] Transação salva: id={$result['id']} user={$data['user_id']} type={$data['type']} amount={$amount}");
-
-        if ($data['type'] === 'expense' && $data['amount'] > 5000) 
-        {
-            Log::warning("[FinanceService] ALERTA: despesa alta detectada para user={$data['user_id']}: R$ {$amount}");
-        }
-        
-        return $result;
+        if (! $this->categoryPolicy->isAllowed($data['type'], $data['category'])) {
+            throw new InvalidArgumentException("Categoria inválida para {$data['type']}.");
+        } 
     }
 }
 
