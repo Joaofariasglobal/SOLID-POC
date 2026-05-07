@@ -6,7 +6,6 @@ use App\Contracts\TransactionRepositoryInterface;
 use App\Contracts\TransactionFactoryInterface;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 class EloquentTransactionRepository implements TransactionRepositoryInterface
 {
@@ -41,7 +40,7 @@ class EloquentTransactionRepository implements TransactionRepositoryInterface
         return $this->fetchDomain($userId);
     }
 
-    public function findByUser(int $userId): Collection
+    public function findByUser(int $userId): array
     {
         return $this->fetchDomain($userId);
     }

@@ -2,7 +2,7 @@
 
 namespace App\Contracts;
 
-interface ExchanceRateProviderInterface
+interface ExchangeRateProviderInterface
 {
     public function convertToBRL(float $amount, string $currency): float;
 }

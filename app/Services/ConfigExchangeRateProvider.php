@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Contracts\ExchanceRateProviderInterface;
+use App\Contracts\ExchangeRateProviderInterface;
 use InvalidArgumentException;
 
-class ConfigExchanceRateProvider implements ExchanceRateProviderInterface
+class ConfigExchangeRateProvider implements ExchangeRateProviderInterface
 {
     public function __construct(private array $rates) {
     

@@ -14,5 +14,5 @@ interface TransactionRepositoryInterface
     public function deleteTransaction(int $id): void;
 
     /** @return array<BaseTransaction> */
-    public function findByUser(int $userId): \Illuminate\Support\Collection;
+    public function findByUser(int $userId): array;
 }

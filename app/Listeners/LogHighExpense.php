@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use App\Events\UserRegistered;
-use Psrz\Log\LoggerInterface;
+use App\Events\HighExpenseDetected;
+use Psr\Log\LoggerInterface;
 
 class LogHighExpense
 {
