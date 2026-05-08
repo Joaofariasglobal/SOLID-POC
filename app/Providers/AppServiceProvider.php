@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
         $this->app->bind(TransactionRepositoryInterface::class, EloquentTransactionRepository::class);
         $this->app->bind(\App\Contracts\TransactionFactoryInterface::class,\App\Domain\Factories\TransactionFactory::class);
-        $this->app->bind(\App\Contracts\ExchanceRateProviderInterface::class, fn ($app) => new \App\Services\ConfigExchanceRateProvider(config('exchange.rates', [])));
+        $this->app->bind(\App\Contracts\ExchangeRateProviderInterface::class, fn ($app) => new \App\Services\ConfigExchangeRateProvider(config('exchange.rates', [])));
     }
 
     /**
